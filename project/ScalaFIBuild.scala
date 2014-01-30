@@ -65,10 +65,14 @@ object ScalaFIBuild extends Build {
   lazy val root = Project("scalafi", file(".")).
     settings(publish :=()).
     settings(publishLocal :=()).
-    aggregate(garch)
+    aggregate(example, core)
 
-  lazy val garch = ScalaFiProject("garch").
-    settings(libraryDependencies ++= Dependencies.garch)
+  lazy val example = ScalaFiProject("example").
+    settings(libraryDependencies ++= Dependencies.example).
+    dependsOn(core)
+
+  lazy val core = ScalaFiProject("core").
+    settings(libraryDependencies ++= Dependencies.core)
 
 }
 
@@ -86,6 +90,9 @@ object Dependencies {
     // Scalaz
     val Scalaz             = "7.0.3"
     val ScalazStream       = "0.1"
+
+    // Math libraries
+    val Breeze             = "0.5.2"
 
     // Test libraries
     val ScalaMock          = "3.1.RC1"
@@ -108,6 +115,9 @@ object Dependencies {
     val scalazEffect        =  "org.scalaz"                 %% "scalaz-effect"               % V.Scalaz
     val scalazIteratee      =  "org.scalaz"                 %% "scalaz-iteratee"             % V.Scalaz
     val scalazStream        =  "org.scalaz.stream"          %% "scalaz-stream"               % V.ScalazStream
+
+    // Math libraries
+    val breeze              =  "org.scalanlp"               %% "breeze"                      % V.Breeze
   }
 
   object Test {
@@ -119,7 +129,11 @@ object Dependencies {
 
   // Projects dependencies
 
-  val garch = Seq()
+
+
+  val example = Seq()
+
+  val core = Seq(Compile.breeze)
 
 }
 
