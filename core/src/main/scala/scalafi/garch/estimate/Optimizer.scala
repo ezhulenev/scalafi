@@ -43,7 +43,7 @@ sealed trait Optimizer {
 object Optimizer {
 
   object BreezeOptimizer extends Optimizer {
-    private val optimizer = new LBFGS[DenseVector[Double]](maxIter = 100, m = 3, tolerance = 1e-10)
+    private val optimizer = new LBFGS[DenseVector[Double]](maxIter = 100, m = 3)
 
 
     override def optimize(objectiveFunction: (DenseVector[Double]) => Double,

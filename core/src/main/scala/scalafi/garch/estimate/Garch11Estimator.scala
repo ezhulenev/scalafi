@@ -1,21 +1,17 @@
 package scalafi.garch.estimate
 
 import breeze.linalg.DenseVector
-import breeze.optimize.{ApproximateGradientFunction, LBFGS}
-
-import org.apache.commons.math3.analysis.MultivariateFunction
-import org.apache.commons.math3.optimization.GoalType
-import org.apache.commons.math3.optimization.direct.CMAESOptimizer
-
 import org.slf4j.LoggerFactory
-
 import scala.language.implicitConversions
-
-import scalafi.garch.GarchModel.Garch
+import scalafi.garch.GarchFit.Garch11Fit
+import scalafi.garch.GarchSpec.Garch11Spec
 import scalafi.garch.estimate.Optimizer.BreezeOptimizer
+import scalafi.garch.EstimatedValue
 
-class GarchEstimator(model: Garch, data: Seq[Double]) extends MaximumLikelihoodEstimator {
-  private val log = LoggerFactory.getLogger(classOf[GarchEstimator])
+
+class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLikelihoodEstimator[Garch11Spec] with Hessian {
+
+  private val log = LoggerFactory.getLogger(classOf[Garch11Estimator])
 
   import breeze.stats.DescriptiveStats.{mean => sampleMean, variance => samleVariance}
   import scala.math.abs
@@ -78,7 +74,8 @@ class GarchEstimator(model: Garch, data: Seq[Double]) extends MaximumLikelihoodE
     llh
   }
 
-  override def estimate(optimizer: Optimizer = BreezeOptimizer): Either[OptimizationError, Parameters] = {
+
+  override def estimate(optimizer: Optimizer = BreezeOptimizer): Either[OptimizationError, Garch11Fit] = {
     val start = Parameters(mu = mean, omega = 0.1 * samleVariance(data), 0.2, 0.5)
     log.debug(s"Start point = $start, likelihood = ${likelihood(start)}")
 
@@ -86,6 +83,23 @@ class GarchEstimator(model: Garch, data: Seq[Double]) extends MaximumLikelihoodE
 
     val result = optimizer.optimize(objectiveFunction, start.denseVector, Some(lowerBound.denseVector), Some(upperBound.denseVector))
 
-    result.right.map(Parameters.apply)
+    result.right.map {
+      case output =>
+        import breeze.linalg._
+        import breeze.numerics._
+
+        val H = hessian(objectiveFunction, output)
+
+        val stdErrors = sqrt(diag(inv(H)))
+        val tValues = output.copy /= stdErrors
+
+        val v = Parameters(output)
+        val se = Parameters(stdErrors)
+        val t = Parameters(tValues)
+
+        def estimate(f: Parameters => Double) = EstimatedValue(f(v), f(se), f(t))
+
+        Garch11Fit(estimate(_.mu), estimate(_.omega), estimate(_.alpha), estimate(_.beta))
+    }
   }
 }

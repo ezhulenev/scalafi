@@ -1,13 +1,15 @@
 package scalafi.garch
 
-import scalafi.garch.GarchModel.Garch
+import scalafi.garch.GarchFit.Garch11Fit
 
-sealed trait GarchSpec[M <: GarchModel] {
-  def model: M
+sealed trait GarchSpec {
+  type Fit <: GarchFit
 }
 
 object GarchSpec {
 
-  case class GarchSpec(model: Garch) extends scalafi.garch.GarchSpec[Garch]
+  case class Garch11Spec() extends scalafi.garch.GarchSpec {
+    override type Fit = Garch11Fit
+  }
 
 }

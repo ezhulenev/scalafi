@@ -1,16 +1,23 @@
 package scalafi
 
-import scalafi.garch.GarchModel.Garch
+import scalafi.garch.GarchSpec.Garch11Spec
+import scalafi.garch.estimate.{OptimizationError, Garch11Estimator, MaximumLikelihoodEstimator}
 
 
 package object garch {
 
-  def garch(): GarchModel = garch(1, 1)
+  sealed trait EstimatorAux[S <: GarchSpec] {
+  def apply(spec: S, data: Seq[Double]): MaximumLikelihoodEstimator[S]
+  }
 
-  def garch(p: Int, q: Int): GarchModel = GarchModel.Garch(p, q)
+  implicit object Garch11Aux extends EstimatorAux[Garch11Spec] {
+    override def apply(spec: Garch11Spec, data: Seq[Double]): Garch11Estimator = {
+      new Garch11Estimator(spec, data)
+    }
+  }
 
-  def garchFit[M <: GarchModel](spec: GarchSpec[M], data: Seq[Double]): GarchFit[M] = spec match {
-    case GarchSpec.GarchSpec(model@Garch(1, 1)) => ???
-    case _ => ???
+
+  def garchFit[S <: GarchSpec](spec: S, data: Seq[Double])(implicit ev: EstimatorAux[S]): Either[OptimizationError, S#Fit] = {
+    ev(spec, data).estimate()
   }
 }
