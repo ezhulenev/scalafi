@@ -16,6 +16,7 @@ package object garch {
     }
   }
 
+  def garch11() = Garch11Spec()
 
   def garchFit[S <: GarchSpec](spec: S, data: Seq[Double])(implicit ev: EstimatorAux[S]): Either[OptimizationError, S#Fit] = {
     ev(spec, data).estimate()

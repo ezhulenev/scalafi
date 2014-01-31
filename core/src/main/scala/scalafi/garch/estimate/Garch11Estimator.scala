@@ -85,8 +85,11 @@ class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLike
 
     result.right.map {
       case output =>
-        import breeze.linalg._
-        import breeze.numerics._
+        import breeze.linalg.{diag, inv}
+        import breeze.numerics.sqrt
+
+        val end = Parameters(output)
+        log.debug(s"End point = $end, likelihood = ${likelihood(end)}")
 
         val H = hessian(objectiveFunction, output)
 

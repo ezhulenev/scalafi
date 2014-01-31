@@ -1,18 +1,27 @@
 package scalafi.example
 
-import scalafi.garch.GarchSpec.Garch11Spec
+import scalafi.garch._
+import org.slf4j.LoggerFactory
 
 object GarchEstimation extends App {
+  private val log = LoggerFactory.getLogger(this.getClass)
 
-  import scalafi.garch._
+  //lazy val returns = returns("/sp500ret.csv")
+  lazy val returns = loadReturns("/dmbp.csv")
 
-  val sp500ret = scala.io.Source.fromInputStream(this.getClass.getResourceAsStream("/sp500ret.csv")).
-    getLines().drop(1).map(_.split(",")(1).toDouble).toSeq
+  val spec = garch11()
 
-  val dmbp = scala.io.Source.fromInputStream(this.getClass.getResourceAsStream("/dmbp.csv")).
-    getLines().drop(1).map(_.split(",")(1).toDouble).toSeq
+  log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
+  val fit = garchFit(spec, returns)
 
-  val fit = garchFit(Garch11Spec(), dmbp)
+  fit.fold(
+    error => log.error(s"Failed to fit model, err = $error"),
+    success => log.info(s"Fitted model = '$fit'")
+  )
 
-  print(fit)
+  def loadReturns(resource: String) = {
+    scala.io.Source.fromInputStream(this.getClass.getResourceAsStream(resource)).
+      getLines().drop(1).map(_.split(",")(1).toDouble).toSeq
+  }
+
 }
