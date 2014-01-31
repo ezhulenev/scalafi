@@ -93,6 +93,7 @@ object Dependencies {
 
     // Math libraries
     val Breeze             = "0.5.2"
+    val CommonsMath        = "2.2"
 
     // Test libraries
     val ScalaMock          = "3.1.RC1"
@@ -118,6 +119,7 @@ object Dependencies {
 
     // Math libraries
     val breeze              =  "org.scalanlp"               %% "breeze"                      % V.Breeze
+    val commonsMath         =   "org.apache.commons"         % "commons-math"                % V.CommonsMath
   }
 
   object Test {
@@ -133,7 +135,7 @@ object Dependencies {
 
   val example = Seq()
 
-  val core = Seq(Compile.breeze)
+  val core = Seq(Compile.slf4jApi, Compile.logback, Compile.breeze, Compile.commonsMath, Compile.scalazCore)
 
 }
 
