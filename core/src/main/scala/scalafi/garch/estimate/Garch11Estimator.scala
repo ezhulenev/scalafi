@@ -40,13 +40,13 @@ class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLike
   private lazy val unitDistribution = breeze.stats.distributions.Gaussian(mu = 0, sigma = 1)
 
   // Sample data parameters
-  private val s = 1e-6
+  private val bound = 1e-6
   private val mean = sampleMean(data)
   private val variance = samleVariance(data)
 
   // Lower & Upper bounds for model parameters
-  private val lowerBound = Parameters(mu = -10 * abs(mean), omega = s * s, alpha = s, beta = s)
-  private val upperBound = Parameters(mu = 10 * abs(mean), omega = 100 * variance, alpha = 1 - s, beta = 1 - s)
+  private val lowerBound = Parameters(mu = -10 * abs(mean), omega = bound * bound, alpha = bound, beta = bound)
+  private val upperBound = Parameters(mu = 10 * abs(mean), omega = 100 * variance, alpha = 1 - bound, beta = 1 - bound)
 
   private def density(z: Double, hh: Double) = unitDistribution.pdf(z / hh) / hh
 
@@ -54,21 +54,27 @@ class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLike
 
     val Parameters(mu, omega, alpha, beta) = params
 
-    val z = data.map(_ - mu)
-    val mean = sampleMean(z.map(scala.math.pow(_, 2)))
+    val err = data.map(_ - mu)
+    val mean = sampleMean(err.map(scala.math.pow(_, 2)))
 
-    val e = (mean +: z.dropRight(1).map(math.pow(_, 2))).map(alpha * _).map(_ + omega)
+    // Initialize error & sigma with mean squared error
+    val err0 = mean
+    val sigmaSq0 = mean
 
-    val h = e.foldLeft(Seq.empty[Double]) {
-      case (Nil, v) => (mean * beta + v) :: Nil
-      case (seq, v) => seq :+ (seq.last * beta + v)
+    // Build sigma squared vector
+    val builder = scala.collection.mutable.ListBuffer.empty[Double]
+    err.foldLeft(err0, sigmaSq0) { case ((_errSq, _sigmaSq), e) =>
+        val sigmaSq = omega + alpha * _errSq + beta * _sigmaSq
+        builder += sigmaSq
+        (math.pow(e, 2), sigmaSq)
     }
+    val sigmaSq = builder.toSeq
 
-    val hh = h.map(_.abs).map(math.sqrt).toSeq
+    // Take square and calculate likelihood
+    val sigma = sigmaSq.map(_.abs).map(math.sqrt).toSeq
 
-    val llh = (z zip hh).map {
-      case (_z, _hh) =>
-        density(_z, _hh)
+    val llh = (err zip sigma).map {
+      case (e, s) => density(e, s)
     }.map(math.log).sum * -1
 
     llh
