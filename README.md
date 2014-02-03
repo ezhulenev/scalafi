@@ -12,27 +12,34 @@ For now it supports only "vanilla" GARCH(1, 1) model with norlmal innovations di
 object GarchEstimation extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  lazy val returns: Seq[Double] = loadReturns("/dmbp.csv")
+  lazy val returns: Seq[Double] = loadReturns("/dmbp.csv" /*"/sp500ret.csv"*/)
 
+  // Prepare GARCH(1,1) spec
   val spec = garch11()
 
+  // Fit estimate into data
   log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
-  val fit = garchFit(spec, DenseVector(returns:_*))
+  val estimate = garchFit(spec, DenseVector(returns: _*))
 
-  fit.fold(
+  // Check that estimation completed successfully
+  estimate.fold(
     error => log.error(s"Failed to fit model, err = $error"),
-    success => log.info(s"Fitted model = '$fit'")
+
+    estimated => {
+      log.info(s"Estimated model = '$estimated'")
+      log.info("10 steps ahead forecast: ")
+      val forecast = garchForecast[Garch11](estimated)
+      forecast.forecast(10).foreach(v => log.info(v.toString))
+    }
   )
 
-  log.info("10 steps ahead forecast: ")
-  val forecast = garchForecast[Garch11](fit.right.get)
-  forecast.forecast(10).foreach(v => log.info(v.toString))
-
+  // Load returns from resources
   def loadReturns(resource: String) = {
     scala.io.Source.fromInputStream(this.getClass.getResourceAsStream(resource)).
       getLines().drop(1).map(_.split(",")(1).toDouble).toSeq
   }
 }
+
 ```
 
 ###### Output:
