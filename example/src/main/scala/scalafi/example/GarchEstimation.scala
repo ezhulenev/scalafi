@@ -3,6 +3,7 @@ package scalafi.example
 import scalafi.garch._
 import org.slf4j.LoggerFactory
 import breeze.linalg.DenseVector
+import scalafi.garch.estimate.EstimationError
 
 object GarchEstimation extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
@@ -21,8 +22,10 @@ object GarchEstimation extends App {
   )
 
   log.info("10 steps ahead forecast: ")
-  val forecast = garchForecast(fit.right.get)
+  val forecast = garchForecast[Garch11](fit.right.get)
   forecast.forecast(10).foreach(v => log.info(v.toString))
+
+
 
   def loadReturns(resource: String) = {
     scala.io.Source.fromInputStream(this.getClass.getResourceAsStream(resource)).
