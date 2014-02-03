@@ -2,6 +2,7 @@ package scalafi.example
 
 import scalafi.garch._
 import org.slf4j.LoggerFactory
+import breeze.linalg.DenseVector
 
 object GarchEstimation extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
@@ -12,7 +13,7 @@ object GarchEstimation extends App {
   val spec = garch11()
 
   log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
-  val fit = garchFit(spec, returns)
+  val fit = garchFit(spec, DenseVector(returns:_*))
 
   fit.fold(
     error => log.error(s"Failed to fit model, err = $error"),

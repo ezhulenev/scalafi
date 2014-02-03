@@ -9,12 +9,13 @@ import scalafi.garch.estimate.Optimizer.BreezeOptimizer
 import scalafi.garch.EstimatedValue
 
 
-class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLikelihoodEstimator[Garch11Spec] with Hessian {
+class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends MaximumLikelihoodEstimator[Garch11Spec] with Hessian {
 
   private val log = LoggerFactory.getLogger(classOf[Garch11Estimator])
 
-  import breeze.stats.DescriptiveStats.{mean => sampleMean, variance => samleVariance}
-  import scala.math.abs
+  import breeze.linalg.{mean => sampleMean, variance => samleVariance}
+  import breeze.numerics.sqrt
+  import breeze.numerics.abs
 
   case class Parameters(mu: Double, omega: Double, alpha: Double, beta: Double) {
     def denseVector = DenseVector(mu, omega, alpha, beta)
@@ -54,30 +55,37 @@ class Garch11Estimator(spec: Garch11Spec, data: Seq[Double]) extends MaximumLike
 
     val Parameters(mu, omega, alpha, beta) = params
 
-    val err = data.map(_ - mu)
-    val mean = sampleMean(err.map(scala.math.pow(_, 2)))
+    val err: DenseVector[Double] = data :- mu
+    val errSq: DenseVector[Double] = err :^ 2.0
+
+    val meanErrSq = sampleMean(errSq)
 
     // Initialize error & sigma with mean squared error
-    val err0 = mean
-    val sigmaSq0 = mean
+    val err0 = meanErrSq
+    val sigmaSq0 = meanErrSq
 
     // Build sigma squared vector
-    val builder = scala.collection.mutable.ListBuffer.empty[Double]
-    err.foldLeft(err0, sigmaSq0) { case ((_errSq, _sigmaSq), e) =>
-        val sigmaSq = omega + alpha * _errSq + beta * _sigmaSq
-        builder += sigmaSq
-        (math.pow(e, 2), sigmaSq)
+    val sigmaSq = DenseVector.zeros[Double](data.length)
+
+    var _errSq = err0
+    var _sigmaSq = sigmaSq0
+    for (i <- 0 until data.length) {
+      sigmaSq.update(i, omega + alpha * _errSq + beta * _sigmaSq)
+      _errSq = errSq(i)
+      _sigmaSq = sigmaSq(i)
     }
-    val sigmaSq = builder.toSeq
 
     // Take square and calculate likelihood
-    val sigma = sigmaSq.map(_.abs).map(math.sqrt).toSeq
+    val sigma = sqrt(abs(sigmaSq))
 
-    val llh = (err zip sigma).map {
-      case (e, s) => density(e, s)
-    }.map(math.log).sum * -1
+    // Calculate log likelihood
+    val llh = for (i <- 0 until data.length) yield {
+      val e = err(i)
+      val s = sigma(i)
+      math.log(density(e, s))
+    }
 
-    llh
+    -1 * llh.sum
   }
 
 
