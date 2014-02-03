@@ -15,16 +15,10 @@ package object garch {
     def forecast(estimate: G#Estimate): Forecast[G]
   }
 
-  implicit object Garch11EstimateAux extends EstimateAux[Garch11] {
-    override def estimate(spec: Garch11, data: DenseVector[Double]): MaximumLikelihoodEstimate[Garch11] = {
-      new Garch11Estimate(spec, data)
-    }
-  }
+  implicit object Garch11Aux extends EstimateAux[Garch11] with ForecastAux[Garch11] {
+    override def estimate(spec: Garch11, data: DenseVector[Double]) = new Garch11Estimate(spec, data)
 
-  implicit def Garch11ForecastAux = new ForecastAux[Garch11] {
-    override def forecast(estimate: Garch11#Estimate): Forecast[Garch11] = {
-      new Garch11Forecast(estimate)
-    }
+    override def forecast(estimate: Garch11#Estimate) = new Garch11Forecast(estimate)
   }
 
   def garch11() = Garch11()
