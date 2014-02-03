@@ -12,7 +12,7 @@ sealed trait Optimizer {
                start: DenseVector[Double],
                lowerBound: Option[DenseVector[Double]],
                upperBound: Option[DenseVector[Double]]
-                ): Either[OptimizationError, DenseVector[Double]]
+                ): Either[EstimationError, DenseVector[Double]]
 
   private def boundsPenalty(params: DenseVector[Double], bounds: DenseVector[Double], penalize: (Double, Double) => Boolean): Double = {
     assume(params.length == bounds.length, s"Parameters length doesn't match bound length")
@@ -49,7 +49,7 @@ object Optimizer {
     override def optimize(objectiveFunction: (DenseVector[Double]) => Double,
                           start: DenseVector[Double],
                           lowerBound: Option[DenseVector[Double]],
-                          upperBound: Option[DenseVector[Double]]): Either[OptimizationError, DenseVector[Double]] = {
+                          upperBound: Option[DenseVector[Double]]): Either[EstimationError, DenseVector[Double]] = {
 
       val f = new ApproximateGradientFunction((p: DenseVector[Double]) => {
         val objective = objectiveFunction(p)
@@ -75,7 +75,7 @@ object Optimizer {
     override def optimize(objectiveFunction: (DenseVector[Double]) => Double,
                           start: DenseVector[Double],
                           lowerBound: Option[DenseVector[Double]],
-                          upperBound: Option[DenseVector[Double]]): Either[OptimizationError, DenseVector[Double]] = {
+                          upperBound: Option[DenseVector[Double]]): Either[EstimationError, DenseVector[Double]] = {
 
       val f = new MultivariateFunction {
         override def value(point: Array[Double]): Double = objectiveFunction(point)

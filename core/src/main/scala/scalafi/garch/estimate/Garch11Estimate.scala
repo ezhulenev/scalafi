@@ -3,19 +3,17 @@ package scalafi.garch.estimate
 import breeze.linalg.DenseVector
 import org.slf4j.LoggerFactory
 import scala.language.implicitConversions
-import scalafi.garch.GarchFit.Garch11Fit
-import scalafi.garch.GarchSpec.Garch11Spec
 import scalafi.garch.estimate.Optimizer.BreezeOptimizer
-import scalafi.garch.EstimatedValue
+import scalafi.garch.{Garch11, EstimatedValue}
 
 
-class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends MaximumLikelihoodEstimator[Garch11Spec] with Hessian {
+class Garch11Estimate(spec: Garch11, data: DenseVector[Double]) extends MaximumLikelihoodEstimate[Garch11] with Hessian {
 
-  private val log = LoggerFactory.getLogger(classOf[Garch11Estimator])
+  private val log = LoggerFactory.getLogger(classOf[Garch11Estimate])
 
   import breeze.linalg.{mean => sampleMean, variance => samleVariance}
-  import breeze.numerics.sqrt
   import breeze.numerics.abs
+  import breeze.numerics.sqrt
 
   case class Parameters(mu: Double, omega: Double, alpha: Double, beta: Double) {
     def denseVector = DenseVector(mu, omega, alpha, beta)
@@ -50,9 +48,8 @@ class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends Max
   private val upperBound = Parameters(mu = 10 * abs(mean), omega = 100 * variance, alpha = 1 - bound, beta = 1 - bound)
 
   private def density(z: Double, hh: Double) = unitDistribution.pdf(z / hh) / hh
-
-  def likelihood(params: Parameters) = {
-
+  
+  private def likelihoodParams(params: Parameters): (DenseVector[Double], DenseVector[Double]) = {
     val Parameters(mu, omega, alpha, beta) = params
 
     val err: DenseVector[Double] = data :- mu
@@ -77,6 +74,12 @@ class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends Max
 
     // Take square and calculate likelihood
     val sigma = sqrt(abs(sigmaSq))
+    
+    (err, sigma)
+  }
+  
+  def likelihood(params: Parameters) = {
+    val (err, sigma) = likelihoodParams(params)
 
     // Calculate log likelihood
     val llh = for (i <- 0 until data.length) yield {
@@ -89,7 +92,7 @@ class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends Max
   }
 
 
-  override def estimate(optimizer: Optimizer = BreezeOptimizer): Either[OptimizationError, Garch11Fit] = {
+  override def estimate(optimizer: Optimizer = BreezeOptimizer): Either[EstimationError, Garch11#Estimate] = {
     val start = Parameters(mu = mean, omega = 0.1 * samleVariance(data), 0.2, 0.5)
     log.debug(s"Start point = $start, likelihood = ${likelihood(start)}")
 
@@ -116,7 +119,12 @@ class Garch11Estimator(spec: Garch11Spec, data: DenseVector[Double]) extends Max
 
         def estimate(f: Parameters => Double) = EstimatedValue(f(v), f(se), f(t))
 
-        Garch11Fit(estimate(_.mu), estimate(_.omega), estimate(_.alpha), estimate(_.beta))
+        val (err, sigma) = likelihoodParams(end)
+
+        spec.Estimate(
+          estimate(_.mu), estimate(_.omega), estimate(_.alpha), estimate(_.beta),
+          err, sigma
+        )
     }
   }
 }

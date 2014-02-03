@@ -1,25 +1,39 @@
 package scalafi
 
-import scalafi.garch.GarchSpec.Garch11Spec
-import scalafi.garch.estimate.{OptimizationError, Garch11Estimator, MaximumLikelihoodEstimator}
 import breeze.linalg.DenseVector
+import scalafi.garch.estimate.{EstimationError, Garch11Estimate, MaximumLikelihoodEstimate}
+import scalafi.garch.forecast.{Garch11Forecast, Forecast}
 
 
 package object garch {
 
-  sealed trait EstimatorAux[S <: GarchSpec] {
-  def apply(spec: S, data: DenseVector[Double]): MaximumLikelihoodEstimator[S]
+  sealed trait EstimateAux[G <: Garch] {
+    def estimate(spec: G, data: DenseVector[Double]): MaximumLikelihoodEstimate[G]
   }
 
-  implicit object Garch11Aux extends EstimatorAux[Garch11Spec] {
-    override def apply(spec: Garch11Spec, data: DenseVector[Double]): Garch11Estimator = {
-      new Garch11Estimator(spec, data)
+  sealed trait ForecastAux[G <: Garch] {
+    def forecast(estimate: G#Estimate): Forecast[G]
+  }
+
+  implicit object Garch11EstimateAux extends EstimateAux[Garch11] {
+    override def estimate(spec: Garch11, data: DenseVector[Double]): MaximumLikelihoodEstimate[Garch11] = {
+      new Garch11Estimate(spec, data)
     }
   }
 
-  def garch11() = Garch11Spec()
+  implicit def Garch11ForecastAux = new ForecastAux[Garch11] {
+    override def forecast(estimate: Garch11#Estimate): Forecast[Garch11] = {
+      new Garch11Forecast(estimate)
+    }
+  }
 
-  def garchFit[S <: GarchSpec](spec: S, data: DenseVector[Double])(implicit ev: EstimatorAux[S]): Either[OptimizationError, S#Fit] = {
-    ev(spec, data).estimate()
+  def garch11() = Garch11()
+
+  def garchFit[G <: Garch](spec: G, data: DenseVector[Double])(implicit ev: EstimateAux[G]): Either[EstimationError, G#Estimate] = {
+    ev.estimate(spec, data).estimate()
+  }
+
+  def garchForecast[G <: Garch](estimate: G#Estimate)(implicit ev: ForecastAux[G]): Forecast[G] = {
+    ev.forecast(estimate)
   }
 }
