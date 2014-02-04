@@ -7,7 +7,6 @@ trait Likelihood {
   def apply(params: DenseVector[Double]): Double
 }
 
-
 sealed trait LikelihoodCalc[M <: Mean, I <: Innovations] {
   // Mean & Innovations model parameters
   type MeanP
@@ -25,7 +24,7 @@ sealed trait LikelihoodCalc[M <: Mean, I <: Innovations] {
     def next(err: Double, sigmaSq: Double): InnovationsRD
   }
 
-  // Extract parameters from DenceVector
+  // Extract parameters from DenseVector
   def parameters(params: DenseVector[Double]): (MeanP, InnovationsP)
 
   // Initialize recursion steps
@@ -77,6 +76,43 @@ object LikelihoodCalc {
 
   }
 
+  implicit object armaGarchCalc extends LikelihoodCalc[Arma11, Garch111] {
+    case class MeanP(mu: Double, ar: Double, ma: Double)
+    case class InnovationsP(omega: Double, alpha: Double, beta: Double)
+
+    case class MeanRD(mu: Double, x: Double, err: Double) extends MeanRDLike {
+      override def next(_x: Double, _err: Double): MeanRD = MeanRD(mu, _x, _err)
+    }
+    case class InnovationsRD(errSq: Double, sigmaSq: Double) extends InnovationsRDLike {
+      override def next(err: Double, sigmaSq: Double): InnovationsRD = InnovationsRD(math.pow(err, 2), sigmaSq)
+    }
+
+    override def sigmaSq(params: InnovationsP, data: InnovationsRD): Double = {
+      params.omega + params.alpha * data.errSq + params.beta * data.sigmaSq
+    }
+
+    override def mean(params: MeanP, data: MeanRD): Double = {
+      params.mu + params.ar * data.x + params.ma * data.err
+    }
+
+    override def initialize(mp: MeanP, ip: InnovationsP, data: DenseVector[Double]): (MeanRD, InnovationsRD) = {
+      import breeze.linalg.{mean => sampleMean}
+      val err: DenseVector[Double] = data :- mp.mu
+      val errSq: DenseVector[Double] = err :^ 2.0
+
+      val meanErr = sampleMean(err)
+      val meanErrSq = sampleMean(errSq)
+
+      (MeanRD(mp.mu, mp.mu, meanErr), InnovationsRD(meanErrSq, meanErrSq))
+    }
+
+    override def parameters(params: DenseVector[Double]): (MeanP, InnovationsP) = {
+      assume(params.activeSize == 6)
+      (MeanP(params(0), params(1), params(2)), InnovationsP(params(3), params(4), params(5)))
+    }
+
+  }
+
 }
 
 object LikelihoodObj {
@@ -92,7 +128,6 @@ object LikelihoodObj {
 
   def likelihood[M <: Mean, I <: Innovations](spec: Spec[M, I], data: DenseVector[Double])
                                              (implicit ev: LikelihoodCalc[M, I]) = new Likelihood {
-
 
     override def apply(parameters: DenseVector[Double]): Double = {
 
@@ -126,8 +161,6 @@ object LikelihoodObj {
 
       // Take square and calculate likelihood
       val sigma = sqrt(abs(sigmaSq))
-
-
 
       // Calculate log likelihood
       val llh = for (i <- 0 until data.length) yield {
