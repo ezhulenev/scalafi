@@ -35,3 +35,21 @@ case class Garch11() extends Garch {
   }
 
 }
+
+case class ArmaGarch() extends Garch {
+  self =>
+
+  case class Estimate(mu: EstimatedValue,
+                      ar: EstimatedValue, ma: EstimatedValue, // ARMA
+                      omega: EstimatedValue, alpha: EstimatedValue, beta: EstimatedValue, // GARCH
+                      err: DenseVector[Double], sigma: DenseVector[Double]) extends EstimateLike {
+
+    override lazy val model: ArmaGarch.this.type = self
+
+    override def toString: String = s"ArmaGarch estimate: mu = $mu, ar = $ar, ma = $ma, omega = $omega, alpha = $alpha, beta = $beta"
+  }
+
+  case class Forecast(mu: Double, sigma: Double) extends ForecastLike {
+    override def toString: String = s"mean = $mu, sigma = $sigma"
+  }
+}

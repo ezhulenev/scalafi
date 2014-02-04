@@ -1,7 +1,7 @@
 package scalafi
 
 import breeze.linalg.DenseVector
-import scalafi.garch.estimate.{EstimationError, Garch11Estimate, MaximumLikelihoodEstimate}
+import scalafi.garch.estimate.{ArmaGarchEstimate, EstimationError, Garch11Estimate, MaximumLikelihoodEstimate}
 import scalafi.garch.forecast.{Garch11Forecast, Forecast}
 
 
@@ -19,6 +19,10 @@ package object garch {
     override def estimate(spec: Garch11, data: DenseVector[Double]) = new Garch11Estimate(spec, data)
 
     override def forecast(estimate: Garch11#Estimate) = new Garch11Forecast(estimate)
+  }
+
+  implicit object ArmaGarchAux extends EstimateAux[ArmaGarch] {
+    override def estimate(spec: ArmaGarch, data: DenseVector[Double]) = new ArmaGarchEstimate(spec, data)
   }
 
   def garch11() = Garch11()
