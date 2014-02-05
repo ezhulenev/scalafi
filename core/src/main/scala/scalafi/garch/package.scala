@@ -6,6 +6,16 @@ import scalafi.garch.forecast.{Garch11Forecast, Forecast}
 
 
 package object garch {
+  
+  implicit class RichEstimatedValue(val estimated: EstimatedValue) extends AnyVal {
+    def named(name: String) = NamedEstimatedValue(name, estimated)
+  } 
+  
+  implicit class RichEstimatedValues(val estimated: Seq[EstimatedValue]) extends AnyVal {
+    def named(name: String) = estimated.zipWithIndex.map {
+      case (e, idx) => NamedEstimatedValue(s"$name${idx+1}", e)
+    }
+  }
 
   sealed trait EstimateAux[G <: OldGarch] {
     def estimate(spec: G, data: DenseVector[Double]): MaximumLikelihoodEstimate[G]

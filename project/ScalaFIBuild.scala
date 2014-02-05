@@ -83,13 +83,8 @@ object Dependencies {
     val Slf4j              = "1.7.5"
     val Logback            = "1.0.13"
 
-    // Joda
-    val JodaTime           = "2.3"
-    val JodaConvert        = "1.5"
-
     // Scalaz
     val Scalaz             = "7.0.3"
-    val ScalazStream       = "0.1"
 
     // Math libraries
     val Breeze             = "0.5.2"
@@ -107,31 +102,22 @@ object Dependencies {
     val slf4jApi            =   "org.slf4j"                  % "slf4j-api"                   % V.Slf4j
     val logback             =   "ch.qos.logback"             % "logback-classic"             % V.Logback
 
-    // Joda
-    val jodaTime            =   "joda-time"                  % "joda-time"                   % V.JodaTime
-    val jodaConvert         =   "org.joda"                   % "joda-convert"                % V.JodaConvert
-
     // Scalaz
     val scalazCore          =  "org.scalaz"                 %% "scalaz-core"                 % V.Scalaz
-    val scalazEffect        =  "org.scalaz"                 %% "scalaz-effect"               % V.Scalaz
-    val scalazIteratee      =  "org.scalaz"                 %% "scalaz-iteratee"             % V.Scalaz
-    val scalazStream        =  "org.scalaz.stream"          %% "scalaz-stream"               % V.ScalazStream
 
     // Math libraries
-    val breeze              =  "org.scalanlp"               %% "breeze"                      % V.Breeze
+    val breeze              =   "org.scalanlp"              %% "breeze"                      % V.Breeze
     val commonsMath         =   "org.apache.commons"         % "commons-math"                % V.CommonsMath
   }
 
   object Test {
     import Dependencies.{Versions => V}
 
-    val scalaMock         =   "org.scalamock"               %% "scalamock-scalatest-support" % V.ScalaMock     % "test"
-    val scalaTest         =   "org.scalatest"               %% "scalatest"                   % V.ScalaTest     % "test"
+    val scalaMock           =   "org.scalamock"             %% "scalamock-scalatest-support" % V.ScalaMock     % "test"
+    val scalaTest           =   "org.scalatest"             %% "scalatest"                   % V.ScalaTest     % "test"
   }
 
   // Projects dependencies
-
-
 
   val example = Seq()
 

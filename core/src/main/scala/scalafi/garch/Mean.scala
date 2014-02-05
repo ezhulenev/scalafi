@@ -19,16 +19,27 @@ object Mean {
 }
 
 case class ConstantMean() extends Mean {
-  class Estimate(mu: EstimatedValue)
+  mean =>
+
+  class Estimate(mu: EstimatedValue) extends EstimateLike {
+    val estimates: Seq[NamedEstimatedValue] = mu.named("mu") :: Nil
+
+    override def toString: String = s"$mean estimate: ${estimates.mkString(",")}"
+
+  }
 
 }
 
 case class Arma(m: Int, n: Int) extends Mean {
   arma =>
 
-  class Estimate(mu: EstimatedValue, ar: Seq[EstimatedValue], ma: Seq[EstimatedValue]) {
+  class Estimate(mu: EstimatedValue, ar: Seq[EstimatedValue], ma: Seq[EstimatedValue]) extends EstimateLike {
     assume(ar.size == m, s"Illegal 'ar' order for model '$arma'")
     assume(ma.size == n, s"Illegal 'ma' order for model '$arma'")
+
+    val estimates: Seq[NamedEstimatedValue] = mu.named("mu") +: ar.named("ar") ++: ma.named("ma")
+
+    override def toString: String = s"$arma estimate: ${estimates.mkString(",")}"
   }
 
 }
