@@ -8,12 +8,12 @@ import breeze.numerics.sqrt
 import scalafi.garch.{Innovations, Mean, Spec}
 
 
-abstract class ArimaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
+abstract class ArmaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
 
   import Innovations._
   import Mean._
 
-  case class Parameters private[ArimaGarchLikelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
+  case class Parameters private[ArmaGarchLikelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
     override def toString: String = {
       s"Parameters(mu = $mu, ar = (${ar.mkString(",")}), ma = (${ma.mkString(",")}), omega = $omega, alpha = (${alpha.mkString(",")}), beta = (${beta.mkString(",")}))"
     }
@@ -86,10 +86,10 @@ abstract class ArimaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVect
       sigmaSq.update(t, sigmaSqT)
 
       // Update recursion data for next step
-      if (!ar.isEmpty)    _x       = _x.tail :+ xT
-      if (!ma.isEmpty)    _err     = _err.tail :+ errT
-      if (!alpha.isEmpty) _errSq   = _errSq.tail :+ math.pow(errT, 2)
-      if (!beta.isEmpty)  _sigmaSq = _sigmaSq.tail :+ sigmaSqT
+      if (!ar.isEmpty)    _x       = xT                +: _x.dropRight(1)
+      if (!ma.isEmpty)    _err     = errT              +: _err.dropRight(1)
+      if (!alpha.isEmpty) _errSq   = math.pow(errT, 2) +: _errSq.dropRight(1)
+      if (!beta.isEmpty)  _sigmaSq = sigmaSqT          +: _sigmaSq.dropRight(1)
     }
 
     val sigma = sqrt(abs(sigmaSq))
