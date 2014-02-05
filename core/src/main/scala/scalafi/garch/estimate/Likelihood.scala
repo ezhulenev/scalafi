@@ -1,15 +1,17 @@
 package scalafi.garch.estimate
 
 import breeze.linalg.DenseVector
+import breeze.linalg.{mean => sampleMean}
+import breeze.numerics.abs
+import breeze.numerics.sqrt
+
 import scalafi.garch.{Innovations, Mean, Spec}
+
 
 abstract class Likelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
 
   import Innovations._
   import Mean._
-  import breeze.linalg.{mean => sampleMean}
-  import breeze.numerics.abs
-  import breeze.numerics.sqrt
 
   case class Parameters private[Likelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
     override def toString: String = {
@@ -25,13 +27,14 @@ abstract class Likelihood[M <: Mean, I <: Innovations](data: DenseVector[Double]
         s"Illegal model parameters length, expected = $modelParameters, got = ${v.length}"
       )
       val p = scala.collection.mutable.ListBuffer(v.activeValuesIterator.toSeq: _*)
+      def take(n: Int) = (0 until n).map(_ => p.remove(0)).toSeq
       Parameters(
-        p.take(1).head,
-        p.take(spec.mean.arOrder),
-        p.take(spec.mean.maOrder),
-        p.take(1).head,
-        p.take(spec.innovations.alphaOrder),
-        p.take(spec.innovations.betaOrder)
+        take(1).head,
+        take(spec.mean.arOrder),
+        take(spec.mean.maOrder),
+        take(1).head,
+        take(spec.innovations.alphaOrder),
+        take(spec.innovations.betaOrder)
       )
     }
   }
@@ -69,8 +72,6 @@ abstract class Likelihood[M <: Mean, I <: Innovations](data: DenseVector[Double]
     var _errSq = errSq0
     var _sigmaSq = sigmaSq0
 
-    println(omega, _errSq, _sigmaSq)
-
     def multiply: (Double, Double) => Double = {
       case (d1, d2) => d1 * d2
     }
@@ -84,16 +85,14 @@ abstract class Likelihood[M <: Mean, I <: Innovations](data: DenseVector[Double]
       err.update(t, errT)
       sigmaSq.update(t, sigmaSqT)
 
-      if (!ar.isEmpty) _x = _x.tail :+ xT
-      if (!ma.isEmpty) _err = _err.tail :+ errT
-      if (!alpha.isEmpty) _errSq = _errSq.tail :+ math.pow(errT, 2)
-      if (!beta.isEmpty) _sigmaSq = _sigmaSq.tail :+ sigmaSqT
+      // Update recursion data for next step
+      if (!ar.isEmpty)    _x       = _x.tail :+ xT
+      if (!ma.isEmpty)    _err     = _err.tail :+ errT
+      if (!alpha.isEmpty) _errSq   = _errSq.tail :+ math.pow(errT, 2)
+      if (!beta.isEmpty)  _sigmaSq = _sigmaSq.tail :+ sigmaSqT
     }
 
     val sigma = sqrt(abs(sigmaSq))
-
-    println(err)
-    println(sigma)
 
     // Calculate log likelihood
     val llh = for (i <- 0 until data.length) yield {
