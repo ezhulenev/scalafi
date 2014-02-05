@@ -1,33 +1,39 @@
 package scalafi
 
 import breeze.linalg.DenseVector
-import scalafi.garch.estimate.{EstimationError, Garch11Estimate, MaximumLikelihoodEstimate}
-import scalafi.garch.forecast.{Garch11Forecast, Forecast}
 
+import scalafi.garch.estimate._
+import scalafi.garch.forecast.Forecast
 
 package object garch {
-
-  sealed trait EstimateAux[G <: Garch] {
-    def estimate(spec: G, data: DenseVector[Double]): MaximumLikelihoodEstimate[G]
+  
+  implicit class RichEstimatedValue(val estimated: EstimatedValue) extends AnyVal {
+    def named(name: String) = NamedEstimatedValue(name, estimated)
+  } 
+  
+  implicit class RichEstimatedValues(val estimated: Seq[EstimatedValue]) extends AnyVal {
+    def named(name: String) = estimated.zipWithIndex.map {
+      case (e, idx) => NamedEstimatedValue(s"$name${idx+1}", e)
+    }
   }
 
-  sealed trait ForecastAux[G <: Garch] {
-    def forecast(estimate: G#Estimate): Forecast[G]
+  implicit class RichMean[M <: Mean](val mean: M) extends AnyVal {
+    def +[I <: Innovations](innovations: I): Spec[M, I] = Spec(mean, innovations)
   }
 
-  implicit object Garch11Aux extends EstimateAux[Garch11] with ForecastAux[Garch11] {
-    override def estimate(spec: Garch11, data: DenseVector[Double]) = new Garch11Estimate(spec, data)
+  def constantMean() = ConstantMean()
 
-    override def forecast(estimate: Garch11#Estimate) = new Garch11Forecast(estimate)
+  def arma(m: Int, n: Int) = Arma(m, n)
+
+  def garch(p: Int, q: Int) = Garch(1, 1)
+
+  def garchFit[M <: Mean, I <: Innovations](spec: Spec[M, I], data: DenseVector[Double])
+                                           (implicit mean: ModelParameters[M], innovations: ModelParameters[I]): Either[EstimationError, Spec[M, I]#Estimate] = {
+    val estimator = new Estimator(data, spec)
+    estimator.estimate()
   }
 
-  def garch11() = Garch11()
-
-  def garchFit[G <: Garch](spec: G, data: DenseVector[Double])(implicit ev: EstimateAux[G]): Either[EstimationError, G#Estimate] = {
-    ev.estimate(spec, data).estimate()
-  }
-
-  def garchForecast[G <: Garch](estimate: G#Estimate)(implicit ev: ForecastAux[G]): Forecast[G] = {
-    ev.forecast(estimate)
+  def garchForecast[M <: Mean, I <: Innovations](spec: Spec[M, I], estimate: Spec[M, I]#Estimate): Forecast[M, I] = {
+    new Forecast(spec, estimate)
   }
 }

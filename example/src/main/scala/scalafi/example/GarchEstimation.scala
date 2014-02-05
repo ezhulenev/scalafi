@@ -7,14 +7,16 @@ import scalafi.garch._
 object GarchEstimation extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  lazy val returns: Seq[Double] = loadReturns("/dmbp.csv" /*"/sp500ret.csv"*/)
+  lazy val dmbp: Seq[Double] = loadReturns("/dmbp.csv")
+  lazy val snp: Seq[Double] = loadReturns("/sp500ret.csv")
+  
+  val returns = dmbp
 
-  // Prepare GARCH(1,1) spec
-  val spec = garch11()
+  val model = constantMean() + garch(1, 1)
 
   // Fit estimate into data
-  log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
-  val estimate = garchFit(spec, DenseVector(returns: _*))
+  log.info(s"Fit '$model' model into returns of size '${returns.length}'")
+  val estimate = garchFit(model, DenseVector(returns: _*))
 
   // Check that estimation completed successfully
   estimate.fold(
@@ -23,8 +25,8 @@ object GarchEstimation extends App {
     estimated => {
       log.info(s"Estimated model = '$estimated'")
       log.info("10 steps ahead forecast: ")
-      val forecast = garchForecast[Garch11](estimated)
-      forecast.forecast(10).foreach(v => log.info(v.toString))
+      val forecast = garchForecast(model, estimated)
+      forecast(10).foreach(v => log.info(v.toString))
     }
   )
 
