@@ -1,13 +1,16 @@
 package scalafi.garch.estimate
 
 import breeze.linalg.DenseVector
-import scalafi.garch.estimate.Optimizer.BreezeOptimizer
-import scalafi.garch._
-import scala.collection.breakOut
-import scalafi.garch.Spec
+
 import org.slf4j.LoggerFactory
-import scala.language.implicitConversions
+
 import scala.annotation.implicitNotFound
+import scala.collection.breakOut
+import scala.language.implicitConversions
+
+import scalafi.garch.Spec
+import scalafi.garch._
+import scalafi.garch.estimate.Optimizer.BreezeOptimizer
 
 @implicitNotFound(msg = "Model parameters type class not found for ${M}")
 sealed trait ModelParameters[M <: Model] {
@@ -21,6 +24,7 @@ sealed trait ModelParameters[M <: Model] {
 }
 
 object ModelParameters {
+
   import breeze.linalg.mean
   import breeze.linalg.variance
 
@@ -139,8 +143,6 @@ class Estimator[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Sp
 
         val estimates: Seq[EstimatedValue] = (0 until v.length).map(i => EstimatedValue(v(i), se(i), t(i)))(breakOut)
         
-        estimates.foreach(println)
-
         val (meanEstimate, meanLeftover) = mean.estimate(spec.mean, estimates)
         val (innovationsEstimate, innovationsLeftover) = innovations.estimate(spec.innovations, meanLeftover)
 

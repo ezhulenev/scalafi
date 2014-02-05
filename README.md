@@ -10,14 +10,13 @@ ScalaFI has tools for univariate GARCH modelling (estimating and forecasting). I
 object GarchEstimation extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  lazy val returns: Seq[Double] = loadReturns("/dmbp.csv" /*"/sp500ret.csv"*/)
+  val returns: Seq[Double] = loadReturns("/dmbp.csv")
 
-  // Prepare GARCH(1,1) spec
-  val spec = garch11()
+  val model = constantMean() + garch(1, 1)
 
   // Fit estimate into data
-  log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
-  val estimate = garchFit(spec, DenseVector(returns: _*))
+  log.info(s"Fit '$model' model into returns of size '${returns.length}'")
+  val estimate = garchFit(model, DenseVector(returns: _*))
 
   // Check that estimation completed successfully
   estimate.fold(
@@ -26,8 +25,8 @@ object GarchEstimation extends App {
     estimated => {
       log.info(s"Estimated model = '$estimated'")
       log.info("10 steps ahead forecast: ")
-      val forecast = garchForecast[Garch11](estimated)
-      forecast.forecast(10).foreach(v => log.info(v.toString))
+      val forecast = garchForecast(model, estimated)
+      forecast(10).foreach(v => log.info(v.toString))
     }
   )
 
@@ -42,11 +41,11 @@ object GarchEstimation extends App {
 
 ###### Output:
 ```
-Garch(1,1) estimate: 
-mu    = EstimatedValue(-0.005956513946539034,0.008458876964391205,-0.7041731392493107) 
-omega = EstimatedValue(0.010764079956857832,0.002849191762009551,3.7779415553503726) 
-alpha = EstimatedValue(0.1537363542775121,0.026664325022776613,5.765619573950993) 
-beta  = EstimatedValue(0.8055765724871476,0.033591755543296166,23.981377557027226) 
+Model(mean = ConstantMean(), innovations = Garch(1,1)) estimate:
+mu     = ^(-0.00623, se = 0.00846, t-value = -0.73649)
+omega  = ^(0.01074,  se = 0.00285, t-value = 3.77318)
+alpha1 = ^(0.15300,  se = 0.02650, t-value = 5.77328)
+beta1  = ^(0.80619,  se = 0.03351, t-value = 24.05904)
 
 10 steps ahead forecast:                                                                                    
 mean = -0.005956513946539034, sigma = 0.3835356133325803                                                                 

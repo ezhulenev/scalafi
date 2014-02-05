@@ -23,6 +23,9 @@ case class Spec[M <: Mean, I <: Innovations](mean: M, innovations: I) {
     override def toString: String = s"$self estimate: ${estimates.mkString(",")}"
   }
 
-  case class Forecast(mean: Double, variance: Double)
+  case class Forecast(mean: Double, variance: Double) {
+    override def toString: String = s"Forecast: mean = $mean, variance = $variance"
+  }
 
+  override def toString: String = s"Model(mean = $mean, innovations = $innovations)"
 }

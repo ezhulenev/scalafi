@@ -2,9 +2,11 @@ package scalafi.garch.estimate
 
 import breeze.linalg.DenseVector
 import breeze.optimize.{ApproximateGradientFunction, LBFGS}
+
 import org.apache.commons.math3.analysis.MultivariateFunction
 import org.apache.commons.math3.optimization.GoalType
 import org.apache.commons.math3.optimization.direct.CMAESOptimizer
+
 import scala.language.implicitConversions
 
 sealed trait Optimizer {
