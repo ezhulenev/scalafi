@@ -66,6 +66,9 @@ class Garch11Estimate(spec: Garch11, data: DenseVector[Double]) extends MaximumL
 
     var _errSq = err0
     var _sigmaSq = sigmaSq0
+
+    println(omega, _errSq, _sigmaSq)
+
     for (i <- 0 until data.length) {
       sigmaSq.update(i, omega + alpha * _errSq + beta * _sigmaSq)
       _errSq = errSq(i)
@@ -74,6 +77,9 @@ class Garch11Estimate(spec: Garch11, data: DenseVector[Double]) extends MaximumL
 
     // Take square and calculate likelihood
     val sigma = sqrt(abs(sigmaSq))
+
+    println(err)
+    println(sigma)
     
     (err, sigma)
   }
