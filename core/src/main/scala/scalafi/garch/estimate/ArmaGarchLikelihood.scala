@@ -8,12 +8,12 @@ import breeze.numerics.sqrt
 import scalafi.garch.{Innovations, Mean, Spec}
 
 
-abstract class ArmaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
+class ArmaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
 
   import Innovations._
   import Mean._
 
-  case class Parameters private[ArmaGarchLikelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
+  case class Parameters(mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
     override def toString: String = {
       s"Parameters(mu = $mu, ar = (${ar.mkString(",")}), ma = (${ma.mkString(",")}), omega = $omega, alpha = (${alpha.mkString(",")}), beta = (${beta.mkString(",")}))"
     }
@@ -44,7 +44,32 @@ abstract class ArmaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVecto
 
   private def density(z: Double, hh: Double) = unitDistribution.pdf(z / hh) / hh
 
-  def likelihood(parameters: Parameters) = {
+  def apply(parameters: DenseVector[Double]): Double = {
+    apply(Parameters(parameters))
+  }
+
+  def apply(parameters: Parameters): Double = {
+    val (err, sigma) = errorsAndSigma(parameters)
+
+    // Calculate log likelihood
+    val llh = for (i <- 0 until data.length) yield {
+      val e = err(i)
+      val s = sigma(i)
+      math.log(density(e, s))
+    }
+
+    -1 * llh.sum
+  }
+
+  def err(parameters: DenseVector[Double]): DenseVector[Double] = err(Parameters(parameters))
+
+  def sigma(parameters: DenseVector[Double]): DenseVector[Double] = sigma(Parameters(parameters))
+
+  def err(parameters: Parameters): DenseVector[Double] = errorsAndSigma(parameters)._1
+
+  def sigma(parameters: Parameters): DenseVector[Double] = errorsAndSigma(parameters)._2
+
+  private def errorsAndSigma(parameters: Parameters): (DenseVector[Double], DenseVector[Double]) = {
     val Parameters(mu, ar, ma, omega, alpha, beta) = parameters
 
     def initialize() = {
@@ -94,14 +119,6 @@ abstract class ArmaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVecto
 
     val sigma = sqrt(abs(sigmaSq))
 
-    // Calculate log likelihood
-    val llh = for (i <- 0 until data.length) yield {
-      val e = err(i)
-      val s = sigma(i)
-      math.log(density(e, s))
-    }
-
-    -1 * llh.sum
-
+    (err, sigma)
   }
 }

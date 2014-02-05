@@ -11,6 +11,9 @@ class Garch11Forecast(estimate: Garch11#Estimate) extends Forecast[Garch11] {
     var _errSq = math.pow(estimate.err.valueAt(last), 2)
     var _sigmaSq = math.pow(estimate.sigma.valueAt(last), 2)
 
+    println(_errSq)
+    println(_sigmaSq)
+
     // Forecast sigma squared
     val sigmaSqForecast = for (i <- 0 until n) yield {
       val sigmaSq = estimate.omega.value + estimate.alpha.value * _errSq + estimate.beta.value * _sigmaSq

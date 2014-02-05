@@ -11,7 +11,7 @@ object GarchEstimation extends App {
   lazy val returns: Seq[Double] = loadReturns("/dmbp.csv" /*"/sp500ret.csv"*/)
 
   // Prepare GARCH(1,1) spec
-  val spec = ArmaGarch()
+  val spec = Garch11()
 
   // Fit estimate into data
   log.info(s"Fit '$spec' model into returns of size '${returns.length}'")
@@ -24,8 +24,8 @@ object GarchEstimation extends App {
     estimated => {
       log.info(s"Estimated model = '$estimated'")
       log.info("10 steps ahead forecast: ")
-      //val forecast = garchForecast[ArmaGarch](estimated)
-      //forecast.forecast(10).foreach(v => log.info(v.toString))
+      val forecast = garchForecast[Garch11](estimated)
+      forecast.forecast(10).foreach(v => log.info(v.toString))
     }
   )
 
