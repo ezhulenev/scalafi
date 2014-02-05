@@ -1,41 +1,34 @@
 package scalafi.garch
 
-sealed trait Mean extends Model {
-
-  case class Forecast(mean: Double) extends ForecastLike
-
-}
+sealed trait Mean extends Model
 
 object Mean {
 
   implicit class RichMean(val mean: Mean) extends AnyVal {
     def arOrder = mean match {
       case _: ConstantMean => 0
-      case _: Arma11 => 1
+      case Arma(ar, _) => ar
     }
 
     def maOrder = mean match {
       case _: ConstantMean => 0
-      case _: Arma11 => 1
+      case Arma(_, ma) => ma
     }
   }
 
 }
 
 case class ConstantMean() extends Mean {
-  mean =>
-
-  class Estimate(mu: Double) extends EstimateLike {
-    val model: ConstantMean.this.type = mean
-  }
+  class Estimate(mu: EstimatedValue)
 
 }
 
-case class Arma11() extends Mean {
-  mean =>
+case class Arma(m: Int, n: Int) extends Mean {
+  arma =>
 
-  class Estimate(mu: EstimatedValue, ar: EstimatedValue, ma: EstimatedValue) extends EstimateLike {
-    val model: Arma11.this.type = mean
+  class Estimate(mu: EstimatedValue, ar: Seq[EstimatedValue], ma: Seq[EstimatedValue]) {
+    assume(ar.size == m, s"Illegal 'ar' order for model '$arma'")
+    assume(ma.size == n, s"Illegal 'ma' order for model '$arma'")
   }
 
 }

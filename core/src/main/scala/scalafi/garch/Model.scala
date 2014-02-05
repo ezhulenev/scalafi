@@ -3,25 +3,13 @@ package scalafi.garch
 trait Model {
   self =>
 
-  type Estimate <: EstimateLike
-  type Forecast <: ForecastLike
-
-  trait EstimateLike {
-    def model: self.type
-  }
-
-  trait ForecastLike {
-
-  }
+  type Estimate
 }
 
-case class Spec[M <: Mean, I <: Innovations](mean: M, innovations: I) extends Model {
+case class Spec[M <: Mean, I <: Innovations](mean: M, innovations: I) {
   self =>
 
-  case class Estimate(mean: M#Estimate, innovations: I#Estimate) extends EstimateLike {
-    val model: Spec.this.type = self
-  }
+  case class Estimate(mean: M#Estimate, innovations: I#Estimate)
 
-  case class Forecast(mean: Double, variance: Double) extends ForecastLike
-
+  case class Forecast(mean: Double, variance: Double)
 }

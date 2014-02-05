@@ -1,31 +1,27 @@
 package scalafi.garch
 
-sealed trait Innovations extends Model {
-
-  case class Forecast(variance: Double) extends ForecastLike
-
-}
+sealed trait Innovations extends Model
 
 object Innovations {
 
   implicit class RichInnovations(val innovations: Innovations) extends AnyVal {
     def alphaOrder = innovations match {
-      case _: Garch111 => 1
+      case Garch(p, _) => p
     }
 
     def betaOrder = innovations match {
-      case _: Garch111 => 1
+      case Garch(_, q) => q
     }
   }
 
 }
 
 
-case class Garch111() extends Innovations {
+case class Garch(p: Int, q: Int) extends Innovations {
   garch =>
 
-  case class Estimate(omega: EstimatedValue, alpha: EstimatedValue, beta: EstimatedValue) extends EstimateLike {
-    val model: Garch111.this.type = garch
+  case class Estimate(omega: EstimatedValue, alpha: Seq[EstimatedValue], beta: Seq[EstimatedValue]) {
+    assume(alpha.size == p, s"Illegal 'alpha' order for model '$garch'")
+    assume(beta.size == q, s"Illegal 'beta' order for model '$garch'")
   }
-
 }

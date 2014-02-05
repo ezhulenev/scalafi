@@ -3,7 +3,7 @@ package scalafi.example
 import breeze.linalg.DenseVector
 import org.slf4j.LoggerFactory
 import scalafi.garch._
-import scalafi.garch.estimate.{Garch11Estimate, Likelihood}
+import scalafi.garch.estimate.{Garch11Estimate, ArimaGarchLikelihood}
 
 object LikelihoodTest extends App {
   private val log = LoggerFactory.getLogger(this.getClass)
@@ -15,12 +15,12 @@ object LikelihoodTest extends App {
   println(est1.likelihood(est1.Parameters(DenseVector(-0.0061903, 0.0107614, 0.1531341, 0.8059737))))
 
   // Prepare GARCH(1,1) spec
-  val spec1 = Spec(ConstantMean(), Garch111())
-  val llh1 = new Likelihood(DenseVector(returns1: _*), spec1) {}
+  val spec1 = Spec(ConstantMean(), Garch(1, 1))
+  val llh1 = new ArimaGarchLikelihood(DenseVector(returns1: _*), spec1) {}
   println(llh1.likelihood(llh1.Parameters(DenseVector(-0.0061903, 0.0107614, 0.1531341, 0.8059737))))
 
-  val spec2 = Spec(Arma11(), Garch111())
-  val llh2 = new Likelihood(DenseVector(returns2: _*), spec2) {}
+  val spec2 = Spec(Arma(1, 1), Garch(1, 1))
+  val llh2 = new ArimaGarchLikelihood(DenseVector(returns2: _*), spec2) {}
   println(llh2.likelihood(llh2.Parameters(DenseVector(8.5888e-05, 8.3463e-01, -8.6528e-01, 1.3614e-06, 8.8177e-02, 9.0427e-01))))
 
 

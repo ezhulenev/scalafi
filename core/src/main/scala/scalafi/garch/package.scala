@@ -7,11 +7,11 @@ import scalafi.garch.forecast.{Garch11Forecast, Forecast}
 
 package object garch {
 
-  sealed trait EstimateAux[G <: Garch] {
+  sealed trait EstimateAux[G <: OldGarch] {
     def estimate(spec: G, data: DenseVector[Double]): MaximumLikelihoodEstimate[G]
   }
 
-  sealed trait ForecastAux[G <: Garch] {
+  sealed trait ForecastAux[G <: OldGarch] {
     def forecast(estimate: G#Estimate): Forecast[G]
   }
 
@@ -27,11 +27,11 @@ package object garch {
 
   def garch11() = Garch11()
 
-  def garchFit[G <: Garch](spec: G, data: DenseVector[Double])(implicit ev: EstimateAux[G]): Either[EstimationError, G#Estimate] = {
+  def garchFit[G <: OldGarch](spec: G, data: DenseVector[Double])(implicit ev: EstimateAux[G]): Either[EstimationError, G#Estimate] = {
     ev.estimate(spec, data).estimate()
   }
 
-  def garchForecast[G <: Garch](estimate: G#Estimate)(implicit ev: ForecastAux[G]): Forecast[G] = {
+  def garchForecast[G <: OldGarch](estimate: G#Estimate)(implicit ev: ForecastAux[G]): Forecast[G] = {
     ev.forecast(estimate)
   }
 }

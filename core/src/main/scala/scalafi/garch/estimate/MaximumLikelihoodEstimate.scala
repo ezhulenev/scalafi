@@ -1,9 +1,9 @@
 package scalafi.garch.estimate
 
-import scalafi.garch.Garch
+import scalafi.garch.OldGarch
 import scalafi.garch.estimate.Optimizer.BreezeOptimizer
 
-trait MaximumLikelihoodEstimate[G <: Garch] {
+trait MaximumLikelihoodEstimate[G <: OldGarch] {
   type Parameters
 
   def likelihood(params: Parameters): Double

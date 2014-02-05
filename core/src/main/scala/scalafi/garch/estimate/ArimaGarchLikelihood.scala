@@ -8,12 +8,12 @@ import breeze.numerics.sqrt
 import scalafi.garch.{Innovations, Mean, Spec}
 
 
-abstract class Likelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
+abstract class ArimaGarchLikelihood[M <: Mean, I <: Innovations](data: DenseVector[Double], spec: Spec[M, I]) {
 
   import Innovations._
   import Mean._
 
-  case class Parameters private[Likelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
+  case class Parameters private[ArimaGarchLikelihood](mu: Double, ar: Seq[Double], ma: Seq[Double], omega: Double, alpha: Seq[Double], beta: Seq[Double]) {
     override def toString: String = {
       s"Parameters(mu = $mu, ar = (${ar.mkString(",")}), ma = (${ma.mkString(",")}), omega = $omega, alpha = (${alpha.mkString(",")}), beta = (${beta.mkString(",")}))"
     }

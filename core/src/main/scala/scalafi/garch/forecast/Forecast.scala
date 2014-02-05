@@ -1,7 +1,7 @@
 package scalafi.garch.forecast
 
-import scalafi.garch.Garch
+import scalafi.garch.OldGarch
 
-trait Forecast[G <: Garch] {
+trait Forecast[G <: OldGarch] {
   def forecast(n: Int = 10): Seq[G#Forecast]
 }

@@ -2,7 +2,7 @@ package scalafi.garch
 
 import breeze.linalg.DenseVector
 
-sealed trait Garch {
+sealed trait OldGarch {
   garch =>
 
   type Estimate <: EstimateLike
@@ -19,7 +19,7 @@ sealed trait Garch {
   }
 }
 
-case class Garch11() extends Garch {
+case class Garch11() extends OldGarch {
   self =>
 
   case class Estimate(mu: EstimatedValue, omega: EstimatedValue, alpha: EstimatedValue, beta: EstimatedValue,
@@ -36,7 +36,7 @@ case class Garch11() extends Garch {
 
 }
 
-case class ArmaGarch() extends Garch {
+case class ArmaGarch() extends OldGarch {
   self =>
 
   case class Estimate(mu: EstimatedValue,
